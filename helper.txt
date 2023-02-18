@@ -1,5 +1,5 @@
 git remote remove origin
-git remote add origin https://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@github.com/tmortx7/f4-trpc-09.git
+git remote add origin https://<token>@github.com/tmortx7/f4-trpc-09.git
 git push --set-upstream origin main
 
 git checkout -b new-feature main
