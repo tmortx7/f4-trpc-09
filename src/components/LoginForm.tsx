@@ -1,57 +1,46 @@
-import type { FormikHelpers } from "formik";
 import { Formik, Form } from "formik";
-import { useRouter } from "next/router";
+import { signIn } from "next-auth/react";
+import router from "next/router";
 import { z } from "zod";
 import { toFormikValidationSchema } from "zod-formik-adapter";
-import { api } from "~/utils/api";
 import Meta from "./Meta";
 import { TextField } from "./TextField";
 
-const RegisterSchema = z.object({
-  name: z.string(),
+const LoginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(4),
 });
 
-type IRegister = z.infer<typeof RegisterSchema>;
+type ILogin = z.infer<typeof LoginSchema>;
 
-export const RegisterForm = () => {
-  const router = useRouter();
-  const utils = api.useContext();
-  const mutation = api.user.register.useMutation({
-    async onSuccess() {
-      await utils.user.list.invalidate();
-    },
-  });
+export const LoginForm = () => {
   return (
     <>
-      <Meta
-        title="HomePage"
-        description="HomePage- starter page"
-        image="/favicon.png"
-      />
+      <Meta title="login" description="login" image="/favicon.png" />
       <div className="mt-[100px] flex w-full flex-row justify-center">
         <div className="p-[50px] shadow">
-          <p className="mb-6 font-sans text-5xl">Register!!</p>
-          <Formik<IRegister>
+          <p className="mb-6 font-sans text-4xl">Signin</p>
+          <Formik<ILogin>
             validateOnBlur={false}
             validateOnChange={true}
             initialValues={{
-              name: "",
-              email: "",
+              email: " ",
               password: "",
             }}
-            validationSchema={toFormikValidationSchema(RegisterSchema)}
-            onSubmit={(values: IRegister) => {
+            validationSchema={toFormikValidationSchema(LoginSchema)}
+            onSubmit={async (values: ILogin) => {
               try {
-                mutation.mutate(values);
+                await signIn("credentials", {
+                  email: values.email,
+                  password: values.password,
+                  redirect: true,
+                });
               } catch (e) {
                 console.log(e);
               }
             }}
           >
             <Form>
-              <TextField name="name" label="Name" autoComplete="off" />
               <TextField
                 name="email"
                 label="Email"
@@ -64,17 +53,19 @@ export const RegisterForm = () => {
                 type="password"
                 autoComplete="off"
               />
-              {mutation.isError ? (
-                <div className="text-red-500">
-                  An error occurred: {mutation.error.message}
-                </div>
-              ) : null}
 
               <button className="btn mt-4 w-full max-w-xs" type="submit">
-                Submit
+                Continue
               </button>
             </Form>
           </Formik>
+          <div className="divider mt-10">New to CSS??</div>
+          <button
+            className="btn-info btn"
+            onClick={() => router.push("/user/new")}
+          >
+            Create your Account
+          </button>
         </div>
       </div>
     </>
