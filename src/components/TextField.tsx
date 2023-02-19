@@ -17,7 +17,7 @@ export const TextField = ({
   return (
     <div className="form-control w-full max-w-xs">
       <label className="label"><span className="label-text">{label}</span></label>
-      <input className="input w-full max-w-xs" {...field} {...props} />
+      <input className="input input-bordered w-full max-w-xs" {...field} {...props} />
       <label className="label"><span className="label-text-alt text-red-500">{meta.error}</span></label>
     </div>
   );
