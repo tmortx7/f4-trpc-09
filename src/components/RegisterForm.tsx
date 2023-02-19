@@ -1,11 +1,12 @@
 import type { FormikHelpers } from "formik";
 import { Formik, Form } from "formik";
 import { z } from "zod";
+import { toFormikValidationSchema } from "zod-formik-adapter";
 import { TextField } from "./TextField";
 
 const RegisterSchema = z.object({
   name: z.string(),
-  email: z.string().email().min(2),
+  email: z.string().email(),
   password: z.string().min(4),
 });
 
@@ -17,18 +18,22 @@ export const RegisterForm = () => {
       <div className="p-[50px] shadow">
         <p className="text-5xl mb-6 font-sans">Register!!</p>
         <Formik<IRegister>
+          validateOnBlur={false}
+          validateOnChange={true}
           initialValues={{
             name: "",
             email: "",
             password: "",
           }}
+          validationSchema={toFormikValidationSchema(RegisterSchema)}
           onSubmit={(
             values: IRegister,
-            { setSubmitting }: FormikHelpers<IRegister>
+            { setSubmitting, resetForm }: FormikHelpers<IRegister>
           ) => {
             setTimeout(() => {
               alert(JSON.stringify(values, null, 2));
               setSubmitting(false);
+              resetForm()
             }, 500);
           }}
         >
