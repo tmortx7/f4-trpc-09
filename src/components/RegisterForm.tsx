@@ -17,10 +17,13 @@ type IRegister = z.infer<typeof RegisterSchema>;
 
 export const RegisterForm = () => {
   const router = useRouter();
-  const utils = api.useContext();
-  const mutation = api.user.register.useMutation({
+  const mutation = api.user.add.useMutation({
     async onSuccess() {
-      await utils.user.list.invalidate();
+      try {
+        await router.push("/");
+      } catch (e) {
+        console.log(e);
+      }
     },
   });
   return (

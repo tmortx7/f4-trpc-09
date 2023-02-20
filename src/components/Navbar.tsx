@@ -2,8 +2,15 @@ import COC from "../../public/coc-logo.svg";
 import { HiOutlineUserCircle } from "react-icons/hi2";
 import { signIn, signOut, useSession } from "next-auth/react";
 import router from "next/router";
+import type { FC } from "react";
 
-export const Navbar = () => {
+type AppProps = {
+  onClick: () => void;
+}
+
+export const Navbar:FC<AppProps> = () => {
+
+
   const { status } = useSession();
   return (
     <div className="navbar">
@@ -14,7 +21,7 @@ export const Navbar = () => {
         {status === "unauthenticated" && (
           <button
             className=" btn-ghost btn  hover:bg-red-600 hover:text-white"
-            onClick={() => router.push("/login")}
+            onClick={()=> router.push("/login")}
           >
             <p className="text-xs">Sign Up / Login</p>
           </button>
