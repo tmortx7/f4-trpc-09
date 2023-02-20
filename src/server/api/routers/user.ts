@@ -1,23 +1,28 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { prisma } from "~/server/db";
 import bcryptjs from "bcryptjs";
 
+const defaultUserSelect = Prisma.validator<Prisma.UserSelect>()({
+  id: true,
+  name: true,
+  email: true,
+  password: true,
+});
 
-const defaultUserSelect =
-  Prisma.validator<Prisma.UserSelect>()({
-    id: true,
-    name: true,
-    email: true,
-    password: true,
-  });
+export const userRouter = createTRPCRouter({
+  getUser: protectedProcedure.query(({ ctx: {session,prisma} }) => {
+    const user = prisma.user.findFirst({
+      where: { email: session.user.email },
+    });
+    return user;
 
-export const userRouter= createTRPCRouter({
+  }),
   list: publicProcedure.query(() => {
     return prisma.user.findMany({
       select: defaultUserSelect,
@@ -48,7 +53,7 @@ export const userRouter= createTRPCRouter({
       z.object({
         name: z.string(),
         email: z.string(),
-        password:z.string(),
+        password: z.string(),
       })
     )
     .mutation(async ({ input }) => {
@@ -56,7 +61,7 @@ export const userRouter= createTRPCRouter({
       const result = await prisma.user.create({
         data: {
           ...input,
-          password: passwordHashed
+          password: passwordHashed,
         },
         select: defaultUserSelect,
       });
@@ -77,7 +82,7 @@ export const userRouter= createTRPCRouter({
           id: input.id,
         },
         data: {
-          ...input
+          ...input,
         },
       });
     }),

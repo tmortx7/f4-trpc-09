@@ -1,11 +1,19 @@
-import { useSession } from "next-auth/react";
 import MainLayout from "~/components/MainLayout";
+import { api } from "~/utils/api";
 
 const HomePage = () => {
-  const { data } = useSession();
+  const { data, isLoading, error } = api.user.getUser.useQuery();
+
+  if (isLoading) {
+    return <p> Loading...</p>;
+  }
+  if (error) {
+    return <p>Error...</p>;
+  }
+
   return(
     <div>
-      {JSON.stringify(data, null, 2)}
+      {data?.id}
     </div>
   )
 }
