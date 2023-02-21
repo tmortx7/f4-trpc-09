@@ -16,13 +16,42 @@ const defaultUserSelect = Prisma.validator<Prisma.UserSelect>()({
 });
 
 export const userRouter = createTRPCRouter({
-  getUser: protectedProcedure.query(({ ctx: {session,prisma} }) => {
+  getUser: protectedProcedure.query(({ ctx: { session, prisma } }) => {
     const user = prisma.user.findFirst({
       where: { email: session.user.email },
     });
     return user;
-
   }),
+  findUser: publicProcedure
+    .input(
+      z.object({
+        email: z.string().email(),
+        password: z.string(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const { email, password } = input;
+
+      try {
+        const user = await ctx.prisma.user.findUnique({
+          where: {
+            email: email,
+          },
+        });
+
+        const passwordHashed = user?.password || "";
+
+        const verifyPassword = bcryptjs.compareSync(password, passwordHashed);
+
+        if (!verifyPassword) {
+          return null;
+        }
+
+        return user;
+      } catch (error) {
+        return null;
+      }
+    }),
   list: publicProcedure.query(() => {
     return prisma.user.findMany({
       select: defaultUserSelect,

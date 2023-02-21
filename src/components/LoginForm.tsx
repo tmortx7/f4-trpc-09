@@ -1,73 +1,97 @@
-import { Formik, Form } from "formik";
 import { signIn } from "next-auth/react";
 import router from "next/router";
-import { z } from "zod";
-import { toFormikValidationSchema } from "zod-formik-adapter";
-import Meta from "./Meta";
-import { TextField } from "./TextField";
+import type { FormEvent } from "react";
+import { useState } from "react";
+import { api } from "~/utils/api";
 
-const LoginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(4),
-});
+const LoginForm = () => {
+  const [emailLogin, setEmailLogin] = useState<string>("");
 
-type ILogin = z.infer<typeof LoginSchema>;
+  const [passwordLogin, setPasswordLogin] = useState<string>("");
+  const [loginError, setLoginError] = useState<boolean>(false);
 
-export const LoginForm = () => {
+  const user = api.user.findUser.useQuery(
+    {
+      email: emailLogin,
+      password: passwordLogin,
+    },
+    { enabled: false }
+  );
+
+  async function handleSubmitLogin(e: FormEvent) {
+    e.preventDefault();
+
+    const data = await user.refetch();
+
+    if (!data.data) {
+      setLoginError(true);
+      return;
+    }
+
+    setLoginError(false);
+
+    try {
+      await signIn("credentials", {
+        email: data?.data?.email,
+        password: data?.data?.password,
+        redirect: true,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   return (
-    <>
-      <Meta title="login" description="login" image="/favicon.png" />
-      <div className="mt-[100px] flex w-full flex-row justify-center">
-        <div className="p-[50px] shadow">
-          <p className="mb-6 font-sans text-4xl">Signin</p>
-          <Formik<ILogin>
-            validateOnBlur={false}
-            validateOnChange={true}
-            initialValues={{
-              email: " ",
-              password: "",
-            }}
-            validationSchema={toFormikValidationSchema(LoginSchema)}
-            onSubmit={async (values: ILogin) => {
-              try {
-                await signIn("credentials", {
-                  email: values.email,
-                  password: values.password,
-                  redirect: true,
-                });
-              } catch (e) {
-                console.log(e);
-              }
-            }}
-          >
-            <Form>
-              <TextField
-                name="email"
-                label="Email"
-                type="email"
-                autoComplete="off"
-              />
-              <TextField
-                name="password"
-                label="Password"
-                type="password"
-                autoComplete="off"
-              />
-
-              <button className="btn mt-4 w-full max-w-xs" type="submit">
-                Continue
-              </button>
-            </Form>
-          </Formik>
-          <div className="divider mt-10">New to CSS??</div>
-          <button
-            className="btn-info btn"
-            onClick={() => router.push("/user/new")}
-          >
-            Create your Account
-          </button>
-        </div>
+    <div className="mt-[100px] flex w-full flex-row justify-center">
+      <div className="flex flex-col">
+        <h1 className="text-3xl font-bold">Login</h1>
+        <form
+          onSubmit={handleSubmitLogin}
+          className=" mt-5 flex w-full flex-col items-center gap-2"
+        >
+          <div className="form-control w-full max-w-xs">
+            <input
+              type="email"
+              name=""
+              id=""
+              placeholder="Email"
+              onChange={(e) => setEmailLogin(e.target.value)}
+              className="input-bordered input w-full max-w-xs"
+            />
+          </div>
+          <div className="form-control w-full max-w-xs">
+            <input
+              type="password"
+              name=""
+              id=""
+              placeholder="Password"
+              onChange={(e) => setPasswordLogin(e.target.value)}
+              className="input-bordered input w-full max-w-xs"
+            />
+          </div>
+          {loginError && <p className="text-red-600">Invalid data</p>}
+          <div className="form-control w-full max-w-xs">
+            <button type="submit" className="btn-info btn w-full max-w-xs">
+              Continue
+            </button>
+            <button
+              className="btn mt-4 w-full max-w-xs"
+              onClick={() => signIn("google")}
+            >
+              Sign in with Google
+            </button>
+          </div>
+        </form>
+        <div className="divider mt-[30px]">New to CSS??</div>
+        <button
+          className="btn btn-warning mt-4 w-full max-w-xs"
+          onClick={() => router.push("/user/new")}
+        >
+          Create your CSS account
+        </button>
       </div>
-    </>
+    </div>
   );
 };
+
+export { LoginForm };
