@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { prisma } from "~/server/db";
-import bcryptjs from "bcryptjs";
+import { hash, verify } from "argon2";
 
 const defaultUserSelect = Prisma.validator<Prisma.UserSelect>()({
   id: true,
@@ -30,25 +30,21 @@ export const userRouter = createTRPCRouter({
       })
     )
     .query(async ({ input, ctx }) => {
-      const { email, password } = input;
-
       try {
-        const user = await ctx.prisma.user.findUnique({
-          where: {
-            email: email,
-          },
+        const { email, password } = input;
+
+        const result = await ctx.prisma.user.findFirst({
+          where: { email },
         });
 
-        const passwordHashed = user?.password || "";
+        if (!result) return null;
+        const Value = result.password ?? " ";
+        const isValidPassword = await verify(Value, password);
 
-        const verifyPassword = bcryptjs.compareSync(password, passwordHashed);
+        if (!isValidPassword) return null;
 
-        if (!verifyPassword) {
-          return null;
-        }
-
-        return user;
-      } catch (error) {
+        return { id: result.id, email, username: result.name };
+      } catch {
         return null;
       }
     }),
@@ -85,12 +81,23 @@ export const userRouter = createTRPCRouter({
         password: z.string(),
       })
     )
-    .mutation(async ({ input }) => {
-      const passwordHashed = await bcryptjs.hash(input.password, 8);
+    .mutation(async ({ input, ctx }) => {
+      const { name, email, password } = input;
+      const exists = await ctx.prisma.user.findFirst({
+        where: { email },
+      });
+
+      if (exists) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "User already exists.",
+        });
+      }
+      const hashedPassword = await hash(password);
       const result = await prisma.user.create({
         data: {
           ...input,
-          password: passwordHashed,
+          password: hashedPassword,
         },
         select: defaultUserSelect,
       });
